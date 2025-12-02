@@ -32,17 +32,18 @@ def get_user_by_id(db: Session, user_id: int):
 
 
 # -------------------- EXERCISE CRUD --------------------
-def create_exercise_for_user(db: Session, user_id: int, exercise: schemas.ExerciseCreate):
+def create_exercise(db: Session, exercise: schemas.ExerciseCreate):
+    """
+    Create a new exercise in the database.
+    """
     db_ex = models.Exercise(
         title=exercise.title,
-        muscle_group=exercise.muscle_group,
-        user_id=user_id
+        muscle_group=exercise.muscle_group
     )
     db.add(db_ex)
     db.commit()
     db.refresh(db_ex)
     return db_ex
-
 
 
 def get_exercises(db: Session):
