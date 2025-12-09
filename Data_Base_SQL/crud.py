@@ -1,4 +1,6 @@
+from uuid import UUID
 from sqlalchemy.orm import Session
+<<<<<<< HEAD
 from . import models, schemas
 from sqlalchemy.orm import joinedload # Für Eager Loading von Beziehungen
 
@@ -8,6 +10,16 @@ def create_user(db: Session, user: schemas.UserCreate):
     """
     Erstellt einen neuen Benutzer in der Datenbank.
     """
+=======
+from Data_Base_SQL import models, schemas
+from Data_Base_SQL.models import Workout
+from Data_Base_SQL.schemas import WorkoutCreate
+
+
+# ---------------- USER CRUD ----------------
+
+def create_user(db: Session, user: schemas.UserCreate):
+>>>>>>> 0be12a57868a06cd9b7e823ed7fd36984d314e81
     db_user = models.User(
         name=user.name,
         email=user.email
@@ -18,6 +30,7 @@ def create_user(db: Session, user: schemas.UserCreate):
     return db_user
 
 
+<<<<<<< HEAD
 def get_users(db: Session, skip: int = 0, limit: int = 100):
     """
     Gibt alle Benutzer zurück und lädt ihre zugehörigen Workouts und Exercises (Eager Loading).
@@ -77,6 +90,38 @@ def create_exercise(db: Session, exercise: schemas.ExerciseCreate):
     """
     Erstellt eine neue Übung in der Datenbank.
     """
+=======
+def get_users(db: Session):
+    return db.query(models.User).all()
+
+
+def get_user_by_id(db: Session, user_id: UUID):
+    return db.query(models.User).filter(models.User.id == user_id).first()
+
+
+# ---------------- EXERCISE CRUD ----------------
+
+def create_exercise(db: Session, exercise: schemas.ExerciseCreate):
+    db_ex = models.Exercise(
+        title=exercise.title,
+        muscle_group=exercise.muscle_group
+    )
+    db.add(db_ex)
+    db.commit()
+    db.refresh(db_ex)
+    return db_ex
+
+
+def get_exercises(db: Session):
+    return db.query(models.Exercise).all()
+
+
+def get_exercise_by_id(db: Session, exercise_id: UUID):
+    return db.query(models.Exercise).filter(models.Exercise.id == exercise_id).first()
+
+
+def create_exercise_for_user(db: Session, user_id: UUID, exercise: schemas.ExerciseCreate):
+>>>>>>> 0be12a57868a06cd9b7e823ed7fd36984d314e81
     db_ex = models.Exercise(
         title=exercise.title,
         muscle_group=exercise.muscle_group,
@@ -88,6 +133,7 @@ def create_exercise(db: Session, exercise: schemas.ExerciseCreate):
     return db_ex
 
 
+<<<<<<< HEAD
 def get_exercises(db: Session, skip: int = 0, limit: int = 100):
     """
     Gibt alle Übungen zurück.
@@ -120,3 +166,41 @@ def create_workout_exercise(db: Session, item: schemas.WorkoutExerciseCreate):
     db.refresh(db_workout_exercise)
 
     return db_workout_exercise
+=======
+def get_exercises_by_user(db: Session, user_id: UUID):
+    return db.query(models.Exercise).filter(models.Exercise.user_id == user_id).all()
+
+
+def delete_exercise(db: Session, exercise_id: UUID):
+    db_ex = db.query(models.Exercise).filter(models.Exercise.id == exercise_id).first()
+    if db_ex:
+        db.delete(db_ex)
+        db.commit()
+
+
+def update_exercise(db: Session, exercise_id: UUID, exercise: schemas.ExerciseCreate):
+    db_ex = db.query(models.Exercise).filter(models.Exercise.id == exercise_id).first()
+    if not db_ex:
+        return None
+
+    db_ex.title = exercise.title
+    db_ex.muscle_group = exercise.muscle_group
+
+    db.commit()
+    db.refresh(db_ex)
+    return db_ex
+
+
+# ---------------- WORKOUT CRUD ----------------
+
+def create_workout(db: Session, data: WorkoutCreate):
+    workout = Workout(
+        user_id=data.user_id,
+        date=data.date,
+        notes=data.notes
+    )
+    db.add(workout)
+    db.commit()
+    db.refresh(workout)
+    return workout
+>>>>>>> 0be12a57868a06cd9b7e823ed7fd36984d314e81

@@ -1,7 +1,13 @@
+from typing import Optional
 from pydantic import BaseModel, ConfigDict
+<<<<<<< HEAD
 from datetime import datetime
 from typing import Optional, List, Union
 
+=======
+from datetime import datetime, date
+from uuid import UUID
+>>>>>>> 0be12a57868a06cd9b7e823ed7fd36984d314e81
 
 # -------------------- HILFS-SCHEMATA (Hilfsschichten für Beziehungen) --------------------
 # Dieses Schema bildet die Verknüpfungstabelle 'WorkoutExercise' ab.
@@ -77,19 +83,68 @@ class UserBase(BaseModel):
     name: str
     email: str
 
-
 class UserCreate(UserBase):
     pass
 
-
 class UserRead(UserBase):
+<<<<<<< HEAD
     id: int
     # Beziehungshalter (Relationship holders): Damit wir sehen, was dem Benutzer gehört.
     exercises: List[ExerciseRead] = []  # Liste der Exercises, die der User erstellt hat.
     workouts: List[WorkoutRead] = []  # Liste der Workouts, die der User erstellt hat.
+=======
+    id: UUID
+>>>>>>> 0be12a57868a06cd9b7e823ed7fd36984d314e81
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        arbitrary_types_allowed=True
+    )
 
 
+<<<<<<< HEAD
 # WICHTIG: Pydantic v2 muss manchmal die Abhängigkeiten neu aufbauen, wenn zirkuläre Referenzen bestehen.
 UserRead.model_rebuild()
+=======
+# ---------------- EXERCISE ----------------
+class ExerciseBase(BaseModel):
+    title: str
+    muscle_group: str
+
+class ExerciseCreate(ExerciseBase):
+    pass
+
+class ExerciseRead(BaseModel):
+    id: UUID
+    title: str
+    muscle_group: str
+    user_id: UUID | None
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        arbitrary_types_allowed=True
+    )
+
+
+# ---------------- WORKOUT ----------------
+class WorkoutCreate(BaseModel):
+    user_id: UUID
+    date: date
+    notes: Optional[str]
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True
+    )
+
+class WorkoutRead(BaseModel):
+    id: UUID
+    user_id: UUID
+    date: datetime
+    notes: Optional[str]
+    created_at: datetime
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        arbitrary_types_allowed=True
+    )
+>>>>>>> 0be12a57868a06cd9b7e823ed7fd36984d314e81

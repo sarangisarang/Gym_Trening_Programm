@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from Data_Base_SQL import crud, schemas, database
@@ -49,3 +50,37 @@ def read_workout(workout_id: int, db: Session = Depends(get_db)):
     if db_workout is None:
         raise HTTPException(status_code=404, detail="Workout nicht gefunden")
     return db_workout
+=======
+from fastapi import APIRouter, Depends, HTTPException
+from uuid import UUID
+from sqlalchemy.orm import Session
+
+from Class_Functions.Workout_Generator import WorkoutGenerator
+from Data_Base_SQL.crud import create_workout
+from Data_Base_SQL.database import get_db
+from Data_Base_SQL.schemas import WorkoutCreate, WorkoutRead
+
+app = APIRouter(prefix="/workout", tags=["Workout"])
+
+
+# -----------------------------------
+# GENERATE WORKOUT PLAN (no database)
+# -----------------------------------
+@app.get("/{days}")
+def generate_workout(days: int):
+    generator = WorkoutGenerator()
+    return generator.generate_plan(days)
+
+
+# -----------------------------------
+# CREATE WORKOUT (UUID-compatible)
+# -----------------------------------
+@app.post("/workouts", response_model=WorkoutRead)
+def create_workout_endpoint(payload: WorkoutCreate, db: Session = Depends(get_db)):
+    workout = create_workout(db, payload)
+
+    if not workout:
+        raise HTTPException(status_code=400, detail="Workout konnte nicht erstellt werden")
+
+    return workout
+>>>>>>> 0be12a57868a06cd9b7e823ed7fd36984d314e81
