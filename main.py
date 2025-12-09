@@ -1,8 +1,9 @@
+#update 09122025 09:27
+
 from fastapi import FastAPI
 from Data_Base_SQL.database import engine
 from Data_Base_SQL import models
 from FastAPI_Funcions import users, exercises, workout
-
 
 models.Base.metadata.create_all(bind=engine)
 
