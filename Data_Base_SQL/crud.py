@@ -1,11 +1,12 @@
 from sqlalchemy.orm import Session
 from . import models, schemas
+from sqlalchemy.orm import joinedload # Für Eager Loading von Beziehungen
 
 
-# -------------------- USER CRUD --------------------
+# -------------------- BENUTZER CRUD (USER CRUD) --------------------
 def create_user(db: Session, user: schemas.UserCreate):
     """
-    Create a new user in the database.
+    Erstellt einen neuen Benutzer in der Datenbank.
     """
     db_user = models.User(
         name=user.name,
@@ -17,28 +18,69 @@ def create_user(db: Session, user: schemas.UserCreate):
     return db_user
 
 
-def get_users(db: Session):
+def get_users(db: Session, skip: int = 0, limit: int = 100):
     """
-    Return all users.
+    Gibt alle Benutzer zurück und lädt ihre zugehörigen Workouts und Exercises (Eager Loading).
     """
-    return db.query(models.User).all()
+    # Lade Workouts und Exercises im Voraus (joinedload)
+    return db.query(models.User)\
+             .options(joinedload(models.User.workouts))\
+             .options(joinedload(models.User.exercises))\
+             .offset(skip).limit(limit).all()
 
 
 def get_user_by_id(db: Session, user_id: int):
     """
-    Return a single user by ID.
+    Gibt einen einzelnen Benutzer anhand der ID zurück.
     """
-    return db.query(models.User).filter(models.User.id == user_id).first()
+    # Lade Workouts und Exercises für den einzelnen Benutzer.
+    return db.query(models.User)\
+             .filter(models.User.id == user_id)\
+             .options(joinedload(models.User.workouts))\
+             .options(joinedload(models.User.exercises))\
+             .first()
 
 
-# -------------------- EXERCISE CRUD --------------------
+# -------------------- WORKOUT CRUD (TRAINING CRUD) --------------------
+# ✅ KORREKTUR: Explizite Zuweisung, um den TypeError zu vermeiden.
+def create_workout(db: Session, workout: schemas.WorkoutCreate):
+    """
+    Erstellt ein neues Workout in der Datenbank.
+    """
+    db_workout = models.Workout(
+        title=workout.title,
+        description=workout.description,
+        user_id=workout.user_id # user_id muss aus dem Schema kommen
+    )
+    db.add(db_workout)
+    db.commit()
+    db.refresh(db_workout)
+    return db_workout
+
+
+def get_workouts(db: Session, skip: int = 0, limit: int = 100):
+    """
+    Gibt alle Workouts zurück.
+    """
+    return db.query(models.Workout).offset(skip).limit(limit).all()
+
+
+def get_workout_by_id(db: Session, workout_id: int):
+    """
+    Gibt ein einzelnes Workout anhand der ID zurück.
+    """
+    return db.query(models.Workout).filter(models.Workout.id == workout_id).first()
+
+
+# -------------------- EXERCISE CRUD (ÜBUNG CRUD) --------------------
 def create_exercise(db: Session, exercise: schemas.ExerciseCreate):
     """
-    Create a new exercise in the database.
+    Erstellt eine neue Übung in der Datenbank.
     """
     db_ex = models.Exercise(
         title=exercise.title,
-        muscle_group=exercise.muscle_group
+        muscle_group=exercise.muscle_group,
+        user_id=exercise.user_id # user_id muss aus dem Schema kommen
     )
     db.add(db_ex)
     db.commit()
@@ -46,23 +88,35 @@ def create_exercise(db: Session, exercise: schemas.ExerciseCreate):
     return db_ex
 
 
-def get_exercises(db: Session):
+def get_exercises(db: Session, skip: int = 0, limit: int = 100):
     """
-    Return all exercises.
+    Gibt alle Übungen zurück.
     """
-    return db.query(models.Exercise).all()
+    return db.query(models.Exercise).offset(skip).limit(limit).all()
 
 
 def get_exercise_by_id(db: Session, exercise_id: int):
     """
-    Return a single exercise by ID.
+    Gibt eine einzelne Übung anhand der ID zurück.
     """
     return db.query(models.Exercise).filter(models.Exercise.id == exercise_id).first()
 
-def create_workout(db: Session, workout: schemas_workouts.WorkoutCreate):
-    # Erstellt ein neues Workout in der Datenbank
-    db_workout = models_workouts.Workout(**workout.dict())
-    db.add(db_workout) # Fügt es zur Session hinzu
-    db.commit() # Speichert es in der Datenbank
-    db.refresh(db_workout) # Holt die DB-Daten (inkl. ID) zurück
-    return db_workout
+
+# -------------------- WORKOUT_EXERCISE CRUD --------------------
+def create_workout_exercise(db: Session, item: schemas.WorkoutExerciseCreate):
+    """
+    Erstellt eine neue Zuordnung (Verbindung) zwischen Workout und Übung.
+    """
+    db_workout_exercise = models.WorkoutExercise(
+        workout_id=item.workout_id,
+        exercise_id=item.exercise_id,
+        sets=item.sets,
+        reps=item.reps,
+        weight=item.weight
+    )
+
+    db.add(db_workout_exercise)
+    db.commit()
+    db.refresh(db_workout_exercise)
+
+    return db_workout_exercise

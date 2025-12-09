@@ -1,7 +1,7 @@
 class WorkoutGenerator:
-    """
+
     Simple workout generator based on muscle groups.
-    """
+
 
     muscle_groups = {
         "chest": ["Bench Press", "Push Ups", "Chest Fly"],
@@ -12,9 +12,9 @@ class WorkoutGenerator:
     }
 
     def generate_plan(self, days: int = 3):
-        """
+
         Generate workout plan for given number of days.
-        """
+
         plan = {}
         group_names = list(self.muscle_groups.keys())
 
