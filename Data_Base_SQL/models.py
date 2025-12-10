@@ -1,41 +1,87 @@
 import uuid
-from datetime import datetime
-from sqlalchemy import Column, String, ForeignKey, DateTime
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy import Column, String, ForeignKey, DateTime, DECIMAL, Integer
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import UUID
 from .database import Base
+from datetime import datetime
 
 
+# -------------------- BENUTZER (USER) --------------------
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(String)
-    email = Column(String)
+    # ID ist Integer (einfacher für den Anfang)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
 
+    # Spalten
+    name = Column(String, index=True)
+    email = Column(String, unique=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Beziehungen zu Workouts und Exercises
+    workouts = relationship("Workout", back_populates="owner")
     exercises = relationship("Exercise", back_populates="owner")
-    workouts = relationship("Workout", back_populates="user")
 
 
+# -------------------- ÜBUNG (EXERCISE) --------------------
 class Exercise(Base):
     __tablename__ = "exercises"
 
-    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    title = Column(String)
-    muscle_group = Column(String)
-    user_id = Column(PG_UUID(as_uuid=True), ForeignKey("users.id"))
+    # ID ist Integer
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
 
+    # Spalten
+    title = Column(String, index=True)
+    muscle_group = Column(String)
+    description = Column(String)
+
+    # Fremdschlüssel zum User
+    user_id = Column(Integer, ForeignKey("users.id"))
     owner = relationship("User", back_populates="exercises")
 
+    # Beziehung zur Verbindungstabelle
+    workouts_link = relationship("WorkoutExercise", back_populates="exercise")
 
+
+# -------------------- TRAINING (WORKOUT) --------------------
 class Workout(Base):
     __tablename__ = "workouts"
 
-    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    date = Column(DateTime, nullable=False)
+    # ID ist Integer
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+
+    # Spalten
+    title = Column(String, index=True)
+    description = Column(String)
+    date = Column(DateTime, default=datetime.utcnow)
     notes = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    user = relationship("User", back_populates="workouts")
+    # Fremdschlüssel zum User
+    user_id = Column(Integer, ForeignKey("users.id"))
+    owner = relationship("User", back_populates="workouts")
 
+    # Beziehung zur Verbindungstabelle
+    exercises_link = relationship("WorkoutExercise", back_populates="workout")
+
+
+# -------------------- VERKNÜPFUNGSTABELLE (WORKOUT_EXERCISES) --------------------
+# Verbindungstabelle für Many-to-Many zwischen Workouts und Exercises
+class WorkoutExercise(Base):
+    __tablename__ = "workout_exercises"
+
+    # ID ist Integer
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+
+    # Fremdschlüssel
+    workout_id = Column(Integer, ForeignKey("workouts.id"))
+    exercise_id = Column(Integer, ForeignKey("exercises.id"))
+
+    # Zusätzliche Spalten für Training-Details
+    sets = Column(Integer)
+    reps = Column(Integer)
+    weight = Column(DECIMAL)
+
+    # ORM-Beziehungen
+    workout = relationship("Workout", back_populates="exercises_link")
+    exercise = relationship("Exercise", back_populates="workouts_link")

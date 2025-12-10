@@ -1,47 +1,71 @@
-from fastapi import APIRouter, Depends, HTTPException
-from uuid import UUID
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from Data_Base_SQL.database import get_db
+from typing import List
 from Data_Base_SQL import crud, schemas
+from Data_Base_SQL.database import get_db
 
-app = APIRouter(prefix="/users", tags=["Benutzer"])
+# Router-Objekt für User-Endpoints
+router = APIRouter(
+    prefix="/users",
+    tags=["Users"]
+)
 
 
 # -----------------------------
 # BENUTZER ERSTELLEN
 # -----------------------------
-@app.post("/", response_model=schemas.UserRead)
+@router.post("/", response_model=schemas.UserRead, status_code=status.HTTP_201_CREATED)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    """
+    Erstellt einen neuen Benutzer.
+    Prüft, ob die E-Mail bereits existiert.
+    """
+    # Prüfe, ob E-Mail schon existiert
     existing_users = crud.get_users(db)
-
     for u in existing_users:
         if u.email == user.email:
-            raise HTTPException(status_code=400, detail="E-Mail existiert bereits")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="E-Mail existiert bereits"
+            )
 
-    return crud.create_user(db, user)
+    return crud.create_user(db=db, user=user)
 
 
 # -----------------------------
 # ALLE BENUTZER ANZEIGEN
 # -----------------------------
-@app.get("/", response_model=list[schemas.UserRead])
-def list_users(db: Session = Depends(get_db)):
-    users = crud.get_users(db)
+@router.get("/", response_model=List[schemas.UserRead])
+def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """
+    Gibt alle Benutzer zurück (mit Pagination).
+    Lädt automatisch ihre Workouts und Exercises (Eager Loading).
+    """
+    users = crud.get_users(db, skip=skip, limit=limit)
 
     if not users:
-        raise HTTPException(status_code=404, detail="Keine Benutzer gefunden")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Keine Benutzer gefunden"
+        )
 
     return users
 
 
 # -----------------------------
-# BENUTZER NACH ID ABRUFEN (UUID!)
+# EINZELNEN BENUTZER ANZEIGEN
 # -----------------------------
-@app.get("/{user_id}", response_model=schemas.UserRead)
-def get_user(user_id: UUID, db: Session = Depends(get_db)):
-    user = crud.get_user_by_id(db, user_id)
+@router.get("/{user_id}", response_model=schemas.UserRead)
+def read_user(user_id: int, db: Session = Depends(get_db)):
+    """
+    Gibt einen einzelnen Benutzer anhand der ID zurück.
+    """
+    db_user = crud.get_user_by_id(db, user_id=user_id)
 
-    if not user:
-        raise HTTPException(status_code=404, detail="Benutzer nicht gefunden")
+    if db_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Benutzer nicht gefunden"
+        )
 
-    return user
+    return db_user
